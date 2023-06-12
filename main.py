@@ -36,7 +36,7 @@ belated_birthday_wishes = [
 st.title("Birthday Reminder")
 
 # Home page
-page = st.sidebar.selectbox("Select an option", ["Check Birthday", "Add Birthday"])
+page = st.sidebar.selectbox("Select an option", ["Check Birthday", "Add Birthday", "Upcoming Birthdays"])
 
 if page == "Check Birthday":
     st.header("Check Your Birthday")
@@ -61,12 +61,9 @@ if page == "Check Birthday":
             if days_to_birthday > 0:
                 st.success(random.choice(birthday_wishes))
                 st.info(f"You have {days_to_birthday} days to celebrate your birthday!")
-
-                # Check if it's the user's birthday today
-
-            if today.day == date_val.day and today.month == date_val.month:
-                    st.success("Happy Birthday, {}!".format(name))
-                    st.audio("hbd.mp3", format="audio/mp3")
+            elif days_to_birthday == 0:
+                st.success("Happy Birthday, {}!".format(name))
+                st.audio("hbd.mp3", format="audio/mp3")
             else:
                 st.success(random.choice(belated_birthday_wishes))
         else:
@@ -91,6 +88,25 @@ if page == "Add Birthday":
         c.execute("INSERT INTO birthdays (name, date) VALUES (?, ?)", (name, date_val))
         conn.commit()
         st.success("Your birthday has been added!")
+
+if page == "Upcoming Birthdays":
+    st.header("Upcoming Birthdays")
+    today = date.today()
+    c.execute("SELECT * FROM birthdays")
+    results = c.fetchall()
+
+    upcoming_birthdays = []
+    for result in results:
+        b_date = datetime.strptime(result[1], "%Y-%m-%d").date()
+        if b_date.month >= today.month and b_date.day >= today.day:
+            upcoming_birthdays.append((result[0], b_date))
+
+    if len(upcoming_birthdays) > 0:
+        upcoming_birthdays.sort(key=lambda x: (x[1].month, x[1].day))
+        for name, birthday in upcoming_birthdays:
+            st.write(f"{name}: {birthday.strftime('%B %d')}")
+    else:
+        st.info("No upcoming birthdays found.")
 
 # Close the database connection
 conn.close()
